@@ -1,0 +1,159 @@
+#!/usr/bin/bash
+
+AF="-AF : (Needs 'connect' first to work) Add all files in current directory after 'git init'"
+
+# 'gitman' just stands for gitmanager btw lol
+gitman="gitmanager"
+propGitman="GitManager:"
+gitmanDesc="Manage your GitHub Repos with Gitmanager."
+gitmanVer="v0.0.1"
+usage="Usage: $gitman "
+
+github="https://github.com"
+
+if [[ ! $1 ]]; then
+	echo "GitManager $gitmanVer"
+	echo "Help: $gitman --help|help|-H"
+	exit
+fi
+
+if [[ "$1" == -v || "$1" == --version ]]; then
+	echo "GitManager $gitmanVer"
+	exit
+fi
+
+# Help Section
+if [[ "$1" == --help || "$1" == help || "$1" == -H ]]; then
+	want_help=TRUE
+	echo $gitmanDesc
+	echo
+
+	echo "Commands:"
+	echo "    $gitman connnect [-AF] | Connects to a GitHub Repo"
+	echo "    $gitman fork | Forks a repo"
+	echo "    $gitman ac <commit_message>|[--why|--set] | !(Warning: Not Recommended, run '$gitman ac --why' for more info)"
+	echo "    $gitman help | Shows this message"
+
+	echo
+	echo "Flags Definitions:"
+	echo "    (connect) $AF"
+	echo "    (global) --help|-H : Shows this message"
+	
+	exit 4
+fi
+
+# Connect to Repo
+if [[ "$1" == connect ]]; then
+  # Check if there is a '-AF' flag
+  if [[ "$2" == -AF ]]; then
+      echo "$propGitman Adding all files after 'git init'"
+      af_mode=TRUE
+      shift
+  else
+      af_mode=FALSE
+  fi
+
+	# Now ask for user input
+	# Might change this
+	read -p "GitHub Username/Organization: " repo_prefix
+
+	if [[ ! $repo_prefix ]]; then
+		echo "$propGitman No username/organization provided"
+		exit 1
+	fi
+
+	read -p "GitHub Repo Name: " name
+
+	if [ ! $name ]; then 
+		echo "$propGitman No repo name provided"
+		exit 1
+	fi
+
+	read -p "Main Branch: " main_branch
+
+	if [[ $name && $repo_prefix && $main_branch ]]; then
+	    echo
+		echo "$propGitman Connecting to $name"
+		git init
+		echo
+
+		# If 'af mode' is true then add
+		# All files to repo after 'git init'
+		if [[ "$af_mode" == TRUE ]]; then
+		    af_msg="git add ."
+			echo "$propGitman Added all files in Repo: $name"
+			git add .
+
+			echo
+		fi
+
+		# Set main branch, and set the origin
+		git branch -M $main_branch
+
+		echo
+		echo "$propGitman Main Branch set to: $main_branch"
+		git remote add origin $github/$repo_prefix/$name
+
+		echo
+		echo "$propGitman Added Remote Origin"
+
+    else
+        echo
+        echo "$propGitman No Required Input Filled"
+        echo "$usage connect [-AF]"
+        echo "For more info: $gitman --help"
+    fi
+fi
+
+# Forking Repos
+if [[ "$1" == fork ]]; then
+	repo_to_fork=$2
+
+	if [[ ! $2 ]]; then
+		echo "$propGitman No repo name given to fork on."
+		echo "Usage: $gitman fork <repo_to_fork>"
+		exit 1
+	fi
+fi
+
+# Add all and Commit
+# - Not recommended since
+#   You can make your own easily
+if [[ "$1" == ac ]]; then
+	if [[ ! $2 ]]; then
+		echo "$propGitman No Commit Message given at second argument"
+		exit 1
+	fi
+
+	git_alias_cmd="git config --global alias.ac \"add . && commit -m\""
+
+	# Set the alias 'ac' for Git
+	if [[ "$2" == --set ]]; then
+		git config alias.ac "add . && commit -m"
+		echo "$propGitman Set alias 'ac' for git"
+		echo "Run Alias Command By:"
+	  echo "git ac \"<your_message>\""
+		echo "replace '<your_message>' with your commit message."
+		exit 4
+	# Why this isn't recommended
+	elif [[ "$2" == --why ]]; then
+		echo "You shouldn't use this when you can just create one your own."
+		echo
+		echo "Set alias for git:"
+		echo $git_alias_cmd
+		exit 4
+	else
+		echo "$propGitman Warning: Run this command instead of using $gitman ac :"
+		echo "$git_alias_cmd"
+		echo
+
+		echo "Run it with: 'git ac \"<your_message>\"' and replace '<your_message>' with your commit message."
+		echo
+	fi
+
+	echo "Git:"
+	echo
+
+	git add .
+	git commit -m "$2"
+fi
